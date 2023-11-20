@@ -31,7 +31,7 @@ middleware_client.username_pw_set("group7", "Group777")
 
 middleware_client.connect("0169ad6feac84c25b5b11b5157be1bd8.s2.eu.hivemq.cloud", port=8883)
 
-middleware_client.loop_start()
+middleware_client.loop_start() 
 
 try:
     while True:
