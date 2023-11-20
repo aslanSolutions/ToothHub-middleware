@@ -1,31 +1,42 @@
+import json
 import paho.mqtt.client as mqtt
-import time
-import os
 
+middleware_client = mqtt.Client(client_id="middleware_side", protocol=mqtt.MQTTv311)
+middleware_client.tls_set(tls_version=mqtt.ssl.PROTOCOL_TLS)
+
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("Connected with result code " + str(rc))
+        client.subscribe("patient")
+        client.subscribe("dentist")
+    else:
+        print("Connection failed with code " + str(rc))
 
 def on_message(client, userdata, msg):
-    print(f"Received message: {msg.payload.decode()} on topic {msg.topic}")
+    try:
+        print("Message received: ", msg.topic, ", ", msg.payload.decode("utf-8"))
+        
+        if msg.topic == "patient":
+            middleware_client.publish("dentist", msg.payload, qos=1)
 
-def on_connect(client, userdata, flags, rc, properties=None):
-    print("Connect" + str(rc))
-    client.subscribe("middleware")
-    client.publish("patient", "nawrooz")
+        elif msg.topic == "dentist":
+            pass
 
-client = mqtt.Client(client_id="middleware_side", userdata=None, protocol=mqtt.MQTTv5)
-client.tls_set(tls_version=mqtt.ssl.PROTOCOL_TLS)
+    except json.JSONDecodeError as e:
+        print("Error decoding JSON:", e)
 
-client.username_pw_set("group7", "Group777")
-client.on_message = on_message
-client.on_connect = on_connect
+middleware_client.on_connect = on_connect
+middleware_client.on_message = on_message
+middleware_client.username_pw_set("group7", "Group777")
 
-client.subscribe("patient")
-client.publish("patient")
+middleware_client.connect("0169ad6feac84c25b5b11b5157be1bd8.s2.eu.hivemq.cloud", port=8883)
 
-client.subscribe("dentist")
-client.publish("dentist")
+middleware_client.loop_start()
 
-client.connect("0169ad6feac84c25b5b11b5157be1bd8.s2.eu.hivemq.cloud", 8883)
-
-client.loop_start()
-time.sleep(5)
-client.disconnect()
+try:
+    while True:
+        pass
+except KeyboardInterrupt:
+    print("Disconnecting from the broker")
+    middleware_client.disconnect()
+    middleware_client.loop_stop()
