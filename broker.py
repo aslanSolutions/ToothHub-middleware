@@ -7,8 +7,8 @@ middleware_client.tls_set(tls_version=mqtt.ssl.PROTOCOL_TLS)
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print("Connected with result code " + str(rc))
-        client.subscribe("patient")
-        client.subscribe("dentist")
+        client.subscribe("notification")
+        client.subscribe("booking")
     else:
         print("Connection failed with code " + str(rc))
 
@@ -16,11 +16,12 @@ def on_message(client, userdata, msg):
     try:
         print("Message received: ", msg.topic, ", ", msg.payload.decode("utf-8"))
         
-        if msg.topic == "patient":
-            middleware_client.publish("dentist", msg.payload, qos=1)
+        if msg.topic == "booking":
+            middleware_client.publish("set-availability", msg.payload, qos=1)
 
-        elif msg.topic == "dentist":
-            pass
+        elif msg.topic == "notification":
+            middleware_client.publish("set-notification", msg.payload, qos=1)
+            
 
     except json.JSONDecodeError as e:
         print("Error decoding JSON:", e)
